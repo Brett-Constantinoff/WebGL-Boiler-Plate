@@ -39,6 +39,9 @@ class App{
     onStart(){
         console.log("Starting application\n");
 
+        //get the number of objects from html
+        this.numObjects = document.querySelector("#objects");
+
         //initialize our state objects
         this.mainShader = new MainShader(this.gl);
     
@@ -198,6 +201,9 @@ class App{
 
         //update scene lights
         this.light.update(this.camera.position);
+
+        //update object count
+        this.numObjects.textContent = this.exampleCube.instances.length;
     }
 
     /**
