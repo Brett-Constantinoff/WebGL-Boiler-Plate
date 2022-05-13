@@ -10,9 +10,10 @@ class RenderObject{
         this.instances = []
         //buffer data for instances
         this.instanceBufferData = {
-            transform: [],
-            colour: [],
-            normal: [],
+            transform: new Float32Array(16 * 4 * this.max),
+            normal: new Float32Array(16 * 4 * this.max),
+            colour: new Float32Array(3 * 4 * this.max),
+       
         };
     }
 
@@ -70,7 +71,7 @@ class RenderObject{
         this.transformBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
         //create buffer big enough for max transforms
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(16 * 4 * this.max), this.gl.DYNAMIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.instanceBufferData.transform, this.gl.DYNAMIC_DRAW);
         
         //each matrix is 4 attributes
         for(var i = 0; i < 4; i++){
@@ -94,7 +95,7 @@ class RenderObject{
         this.normalMatBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalMatBuffer);
         //create bufffer big enough
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(16 * 4 * this.max), this.gl.DYNAMIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.instanceBufferData.normal, this.gl.DYNAMIC_DRAW);
         
         //setup attribs
         for(var i = 0; i < 4; i++){
@@ -117,7 +118,7 @@ class RenderObject{
         this.colourBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colourBuffer);
          //create buffer big enough for max colours
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(3 * 4 * this.max), this.gl.DYNAMIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.instanceBufferData.colour, this.gl.DYNAMIC_DRAW);
 
         this.gl.vertexAttribPointer(
             this.shader.info.attribs.vertexColours, 
@@ -188,11 +189,18 @@ class RenderObject{
     * @return {none}
     */
     updateBufferData(){
-        //update the buffer
-        var transforms = [];
-        var normalMats = [];
-        var colours = [];
-        this.instances.forEach( (instance) => {
+
+        this.instances.forEach( (instance, index) => {
+            //only update dynamic instances each frame
+            if(instance.type === "dynamic"){
+                var mat4Offset = index * 16;
+                var vec3Offset = index * 3;
+                this.updateTransforms(instance, mat4Offset, vec3Offset);
+        }
+        });
+    }
+
+    updateTransforms(instance, mat4Start, vec3Start){
             var transform = mat4.create();
             var normalMat = mat4.create();
             var centroid = this.getCentroid();
@@ -213,15 +221,16 @@ class RenderObject{
             mat4.transpose(normalMat, transform);
             mat4.invert(normalMat, normalMat);
 
-            //add buffer to instance buffers
-            transforms.push(transform);
-            normalMats.push(normalMat);
-            colours.push(instance.colour);
-        })
-        //update and flatten each instance buffer
-        this.instanceBufferData.transform = flatten(transforms);
-        this.instanceBufferData.colour = flatten(colours);
-        this.instanceBufferData.normal = flatten(normalMats);
+            //copy the mat 4 data
+            for(var i = 0; i < 16; i++){
+                this.instanceBufferData.transform[mat4Start + i] = transform[i];
+                this.instanceBufferData.normal[mat4Start + i] = normalMat[i];
+            }
+
+            //copy the vec3 data
+            for(var i = 0; i < 3; i++){
+                this.instanceBufferData.colour[vec3Start + i] = instance.colour[i];
+            }
     }
 
     /**
@@ -234,6 +243,12 @@ class RenderObject{
     */
     addInstance(instance){
         if(this.instances.length < this.max){
+            //object wont need updating every frame so do it here once
+            if(instance.type === "static"){
+                var mat4Offset = this.instances.length * 16;
+                var vec3Offset = this.instances.length * 3;
+                this.updateTransforms(instance, mat4Offset, vec3Offset);
+            }
             this.instances.push(instance)
         }
         else{

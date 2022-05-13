@@ -92,9 +92,9 @@ class ExampleCube extends RenderObject{
         //set uniforms
         this.projection = projection;
         this.view = view;
-
-        //update our buffer data for dynamic rendering
+        
         this.updateBufferData();
+
     }
 
     /**
@@ -114,7 +114,8 @@ class ExampleCube extends RenderObject{
         //update uniforms
         this.shader.setMat4(this.shader.info.uniforms.view, this.view);
         this.shader.setMat4(this.shader.info.uniforms.projection, this.projection);
-
+        
+            
         //update our transform buffer
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.transformBuffer);
         this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, this.instanceBufferData.transform);
@@ -126,6 +127,7 @@ class ExampleCube extends RenderObject{
         //update normal matrix buffer
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalMatBuffer);
         this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, this.instanceBufferData.normal);
+        
 
         //instanced rendering
         this.gl.drawElementsInstanced(

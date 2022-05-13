@@ -50,27 +50,51 @@ class App{
 
         //add example cube instances
         var pos = vec3.fromValues(0, 0, 0)
-        for(var i = 0; i < 5; i++){
-            this.exampleCube.addInstance({
-                //the type of an instance specifies how it should be treated
-                type: "exampleCube",
-                //colour of the instance
-                colour: vec3.fromValues(randomFloat(0.0, 1.0), randomFloat(0.0, 1.0), randomFloat(0.0, 1.0)),
-                //rotation matrix for the instance, when rotating this is what is updated
-                rotation: mat4.create(),
-                //initial rotation angle of the object, if you dont want the object to rotate make this 0
-                theta: degToRad(45),
-                //position of the object in world space
-                position: vec3.fromValues(pos[0], pos[1], pos[2]),
-                //speed of object
-                speed: 2.0,
-                //size of the object
-                scale: vec3.fromValues(1, 1, 1),
-                //what do we want to scale by, used later
-                scaleFactor: 1.0,
-            });
+        for(var i = 0; i < this.exampleCube.max; i++){
+            var type;
+            var angle;
+            var speed;
+            this.exampleCube.addInstance(
+                new Instance(
+                    //name of instance
+                    "exampleStaticCube" + i,
+                    //type determines how the objects buffer data is updated
+                    //static means the instances buffer data doesnt need to be updated each frame
+                    //dynamic means the instances buffer data needs to be updated each frame
+                    type, 
+                    //colour of the instance
+                    vec3.fromValues(randomFloat(0.0, 1.0), randomFloat(0.0, 1.0), randomFloat(0.0, 1.0)),
+                    //rotation matrix for the instance, when rotating this is what is updated
+                    mat4.create(),
+                    //initial rotation angle of the object, if you dont want the object to rotate make this 0
+                    angle, 
+                    //position of the instance in world space
+                    vec3.fromValues(pos[0], pos[1], pos[2]),
+                    //speed of object
+                    speed, 
+                    //size of the object
+                    vec3.fromValues(1, 1, 1),
+                    //what do we want to scale by, used later
+                    1.0
+                )
+            );
             pos[2] -= 10;
+            if(i % 100 === 0 && i != 0){
+                pos[2] = 0;
+                pos[1] += 10
+            }
+            if(i % 5 === 0){
+                speed = 1.25;
+                type = "dynamic";
+                angle = 45.0;
+            }
+            else{
+                speed = 0;
+                angle = 0.0;
+                type = "static";
+            }
         }
+
 
         //add a new scene light
         this.light = new Light(
@@ -134,20 +158,20 @@ class App{
             degToRad(45.0),
             this.canvas.clientWidth / this.canvas.clientHeight,
             0.1, 
-            100.0
+            //how far will things be rendered before being clipped
+            1000.0
         );
         
         //give our cubes some new transformation data
         var numCubes = this.exampleCube.instances.length;
         for(var i = 0; i < numCubes; i++){
             var cube = this.exampleCube.instances[i];
-            if(cube.type === "exampleCube"){
+            if(cube.type === "dynamic"){
                 //rotate
-                this.exampleCube.rotate(vec3.fromValues(1, 1, 1), 15.0 * deltaTime * i, i);
+                this.exampleCube.rotate(vec3.fromValues(1, 1, 1), degToRad(cube.angle) * deltaTime * i, i);
 
                 //move 
-                var cube = this.exampleCube.instances[i];
-                this.exampleCube.translate(vec3.fromValues(cube.speed * deltaTime * i, cube.speed * deltaTime * i, 0), i);
+                this.exampleCube.translate(vec3.fromValues(cube.speed * deltaTime, cube.speed * deltaTime, 0), i);
                 if(cube.position[0] >= 10.0){
                     cube.speed *= -1;
                 }
