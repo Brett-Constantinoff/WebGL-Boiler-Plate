@@ -5,7 +5,7 @@ class RenderObject{
         //shader program
         this.shader = shader;
         //max amount to render
-        this.max = 10000;
+        this.max = 1000;
         //holds all instances
         this.instances = []
         //buffer data for instances
@@ -192,11 +192,11 @@ class RenderObject{
 
         this.instances.forEach( (instance, index) => {
             //only update dynamic instances each frame
-            if(instance.type === "dynamic"){
+            
                 var mat4Offset = index * 16;
                 var vec3Offset = index * 3;
                 this.updateTransforms(instance, mat4Offset, vec3Offset);
-        }
+        
         });
     }
 
